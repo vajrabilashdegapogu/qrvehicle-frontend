@@ -14,7 +14,7 @@ function CreateQRPage() {
       const res = await api.post("/add", form);
 
       // Open QR download
-      window.open(`https://qrvehicle-backend-production.up.railway.app/api/qr/${res.data.uniqueCode}`);
+      window.open(`http://localhost:8080/api/qr/${res.data.uniqueCode}`);
 
       alert("✅ QR Generated!");
 

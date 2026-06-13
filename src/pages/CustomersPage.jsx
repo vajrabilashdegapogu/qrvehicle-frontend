@@ -12,7 +12,7 @@ function CustomersPage() {
   }, []);
 
   const downloadQR = (code) => {
-  window.open(`http://localhost:8080/api/qr/${code}`);
+  window.open("https://qrvehicle-backend-production.up.railway.app/api/qr/" + code);
 };
 
 const deleteCustomer = async (id) => {
