@@ -24,11 +24,12 @@ function VehiclePage() {
   }, [code]);
 
   const callNow = () => {
-    window.location.href = `http://localhost:8080/api/call/${code}`;
+    window.location.href = `https://qrvehicle-backend-production.up.railway.app/api/call/${code}`;
+    //  window.open(`https://qrvehicle-backend-production.up.railway.app/api/qr/${res.data.uniqueCode}`);
   };
 
   const whatsapp = () => {
-    window.location.href = `http://localhost:8080/api/whatsapp/${code}`;
+    window.location.href = `https://qrvehicle-backend-production.up.railway.app/api/whatsapp/${code}`;
   };
 
   const submitOrder = async () => {

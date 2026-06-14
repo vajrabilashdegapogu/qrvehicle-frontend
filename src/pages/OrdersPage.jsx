@@ -1,49 +1,3 @@
-// import { useEffect, useState } from "react";
-// import api from "../services/api";
-// import "../css/OrdersPage.css";
-
-// function OrdersPage() {
-
-//   const [orders, setOrders] = useState([]);
-
-//   useEffect(() => {
-//     api.get("/order").then(res => setOrders(res.data));
-//   }, []);
-
-//   return (
-//     <div className="orders-bg">
-
-//       <div className="orders-container">
-//         <h2>📦 Orders Dashboard</h2>
-
-//         <div className="orders-grid">
-//           {orders.map(o => (
-//             <div key={o.id} className="order-card">
-
-//               <h3>🚗 {o.vehicleNumber}</h3>
-
-//               <p><b>Name:</b> {o.name}</p>
-//               <p><b>Phone:</b> {o.phone}</p>
-//               <p><b>Address:</b> {o.address}</p>
-
-//               <div className="code">
-//                 Code: {o.vehicleCode.substring(0, 8)}...
-//               </div>
-
-//             </div>
-//           ))}
-//         </div>
-
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default OrdersPage;
-
-
-
-
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import "../css/OrdersPage.css";
@@ -56,10 +10,6 @@ function OrdersPage() {
 
   const [orders, setOrders] = useState([]);
   const [editingOrder, setEditingOrder] = useState(null);
-
-  // useEffect(() => {
-  //   api.get("/order").then(res => setOrders(res.data));
-  // }, []);
 
   const updateStatus = async (id, status) => {
   await api.put(`/order/${id}/status?status=${status}`);
@@ -86,7 +36,8 @@ const generateQR = async (orderId) => {
     const res = await api.post(`/from-order/${orderId}`);
 
     // Download QR
-    window.open(`http://localhost:8080/api/qr/${res.data.uniqueCode}`);
+    // window.open(`http://localhost:8080/api/qr/${res.data.uniqueCode}`);
+     window.open(`https://qrvehicle-backend-production.up.railway.app/api/qr/${res.data.uniqueCode}`);
 
     alert("✅ QR Generated & Customer Added!");
 
@@ -122,20 +73,6 @@ const deleteOrder = async (id) => {
   setEditingOrder(null);
 };
 
-// const editOrder = (order) => {
-//   const name = prompt("Name:", order.name);
-//   const phone = prompt("Phone:", order.phone);
-//   const address = prompt("Address:", order.address);
-//   const vehicleNumber = prompt("Vehicle:", order.vehicleNumber);
-
-//   api.put(`/order/${order.id}`, {
-//     ...order,
-//     name,
-//     phone,
-//     address,
-//     vehicleNumber
-//   }).then(() => window.location.reload());
-// };
 
   return (
     <div>
