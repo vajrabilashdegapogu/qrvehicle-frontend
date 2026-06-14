@@ -30,7 +30,7 @@ function AdminPage() {
       const res = await api.post("/add", form);
 
       // Download QR
-     window.open(`https://qrvehicle-backend-production.up.railway.app/api/qr/${res.data.uniqueCode}`);
+     window.open(`www.owntag.in/api/qr/${res.data.uniqueCode}`);
 
       alert("✅ QR Generated Successfully!");
 
