@@ -46,26 +46,6 @@ const updateCustomer = async () => {
   setEditingCustomer(null);
 };
 
-// const editCustomer = (c) => {
-//   const name = prompt("Name:", c.ownerName);
-//   const phone = prompt("Phone:", c.phoneNumber);
-//   const vehicle = prompt("Vehicle:", c.vehicleNumber);
-
-//   api.put(`/vehicle/${c.id}`, {
-//     ownerName: name,
-//     phoneNumber: phone,
-//     vehicleNumber: vehicle
-//   }).then(() => {
-//     setCustomers(prev =>
-//       prev.map(x =>
-//         x.id === c.id
-//           ? { ...x, ownerName: name, phoneNumber: phone, vehicleNumber: vehicle }
-//           : x
-//       )
-//     );
-//   });
-// };
-
   return (
     <div>
       <h2>👥 Customers</h2>
