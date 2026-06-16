@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/LoginPage.css";
+import Navbar from "../components/NavBar";
+
 
 function LoginPage() {
 
@@ -23,6 +25,8 @@ function LoginPage() {
   };
 
   return (
+    <div>
+      <Navbar />
     <div className="login-bg">
       <div className="login-card">
 
@@ -42,6 +46,7 @@ function LoginPage() {
         <button onClick={login}>Login</button>
 
       </div>
+    </div>
     </div>
   );
 }

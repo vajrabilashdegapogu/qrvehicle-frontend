@@ -20,7 +20,7 @@ function Dashboard() {
         <button onClick={() => setPage("create")}>➕ Add Vehicle</button>
         <button onClick={() => setPage("customers")}>👥 Customers</button>
          <button className="logout-btn" onClick={() => {localStorage.removeItem("admin");
-        window.location.href = "/login";}}>
+        window.location.href = "/";}}>
        🚪 Logout
         </button>
         <DashboardHome />

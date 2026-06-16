@@ -30,7 +30,7 @@ function AdminPage() {
       const res = await api.post("/add", form);
 
       // Download QR
-     window.open(`www.owntag.in/api/qr/${res.data.uniqueCode}`);
+     window.open(`http://localhost:8080/api/qr/${res.data.uniqueCode}`);
 
       alert("✅ QR Generated Successfully!");
 
