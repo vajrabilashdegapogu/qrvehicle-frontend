@@ -30,7 +30,8 @@ function AdminPage() {
       const res = await api.post("/add", form);
 
       // Download QR
-     window.open(`http://localhost:8080/api/qr/${res.data.uniqueCode}`);
+    //  window.open(`http://localhost:8080/api/qr/${res.data.uniqueCode}`);
+     window.open(`https://qrvehicle-backend-production.up.railway.app/api/qr/${res.data.uniqueCode}`);
 
       alert("✅ QR Generated Successfully!");
 
@@ -54,19 +55,19 @@ function AdminPage() {
           <h2>🚗 OwnTag </h2>
           <p className="subtitle">Create QR for new vehicle</p>
 
-          <input
+          <input className="text-black"
             placeholder="Owner Name"
             value={form.ownerName}
             onChange={e => setForm({...form, ownerName: e.target.value})}
           />
 
-          <input
+          <input className="text-black"
             placeholder="Phone Number"
             value={form.phoneNumber}
             onChange={e => setForm({...form, phoneNumber: e.target.value})}
           />
 
-          <input
+          <input className="text-black"
             placeholder="Vehicle Number"
             value={form.vehicleNumber}
             onChange={e => setForm({...form, vehicleNumber: e.target.value})}

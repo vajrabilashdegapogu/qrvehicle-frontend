@@ -91,22 +91,22 @@ function VehiclePage() {
           {showForm && (
             <div className="order-form">
 
-              <input placeholder="Your Name"
+              <input className="text-black" placeholder="Your Name"
                 value={form.name}
                 onChange={e => setForm({...form, name: e.target.value})}
               />
 
-              <input placeholder="Phone Number"
+              <input className="text-black" placeholder="Phone Number"
                 value={form.phone}
                 onChange={e => setForm({...form, phone: e.target.value})}
               />
 
-              <textarea placeholder="Delivery Address"
+              <textarea className="text-black" placeholder="Delivery Address"
                 value={form.address}
                 onChange={e => setForm({...form, address: e.target.value})}
               />
 
-              <input placeholder="Vehicle Number"
+              <input className="text-black" placeholder="Vehicle Number"
                 value={form.vehicleNumber}
                 onChange={e => setForm({...form, vehicleNumber: e.target.value})}
               />

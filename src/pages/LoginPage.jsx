@@ -32,12 +32,12 @@ function LoginPage() {
 
         <h2>🔐 Admin Login</h2>
 
-        <input
+        <input className="text-black"
           placeholder="Username"
           onChange={e => setUsername(e.target.value)}
         />
 
-        <input
+        <input className="text-black"
           type="password"
           placeholder="Password"
           onChange={e => setPassword(e.target.value)}
