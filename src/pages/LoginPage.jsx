@@ -14,7 +14,7 @@ function LoginPage() {
   const login = () => {
 
     // 🔥 Simple static login (you can upgrade later)
-    if (username === "admin" && password === "1234") {
+    if (username === "admin" && password === "Deepuabhi@0399") {
 
       localStorage.setItem("admin", "true"); // ✅ store login
       navigate("/admin");

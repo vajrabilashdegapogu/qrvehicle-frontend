@@ -8,7 +8,8 @@ function AdminPage() {
   const [form, setForm] = useState({
     ownerName: "",
     phoneNumber: "",
-    vehicleNumber: ""
+    vehicleNumber: "",
+    address: ""
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -23,7 +24,7 @@ function AdminPage() {
 
   const submit = async () => {
 
-    if (!form.ownerName || !form.phoneNumber || !form.vehicleNumber) {
+    if (!form.ownerName || !form.phoneNumber || !form.vehicleNumber || !form.address) {
       setError("Please fill all fields");
       setTimeout(() => setError(""), 2000);
       return;
@@ -42,7 +43,8 @@ function AdminPage() {
       setForm({
         ownerName: "",
         phoneNumber: "",
-        vehicleNumber: ""
+        vehicleNumber: "",
+        address: ""
       });
 
       setTimeout(() => setMessage(""), 2500);
@@ -96,6 +98,13 @@ function AdminPage() {
               placeholder="Vehicle Number"
               value={form.vehicleNumber}
               onChange={e => setForm({ ...form, vehicleNumber: e.target.value })}
+            />
+
+            <input
+              className="text-black"
+              placeholder="Address"
+              value={form.address}
+              onChange={e => setForm({ ...form, address: e.target.value })}
             />
 
             <button onClick={submit}>

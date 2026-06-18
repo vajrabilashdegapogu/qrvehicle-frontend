@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import api from "../services/api";
 import "../css/CustomersPage.css";
 
@@ -7,135 +7,208 @@ function CustomersPage() {
   const [customers, setCustomers] = useState([]);
   const [editingCustomer, setEditingCustomer] = useState(null);
 
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [deleteId, setDeleteId] = useState(null);
+
+  // ✅ LOAD CUSTOMERS
+  const loadCustomers = useCallback(() => {
+    api.get(`/vehicle/paginated?page=${page}&size=9`)
+      .then(res => {
+        setCustomers(res.data.content);
+        setTotalPages(res.data.totalPages);
+      })
+      .catch(() => {
+        setError("❌ Failed to load customers");
+        setTimeout(() => setError(""), 2000);
+      });
+  }, [page]);
+
   useEffect(() => {
-    api.get("/all").then(res => setCustomers(res.data));
-  }, []);
+    loadCustomers();
+  }, [loadCustomers]);
 
+  // 📥 DOWNLOAD QR
   const downloadQR = (code) => {
-  window.open("https://qrvehicle-backend-production.up.railway.app/api/qr/" + code);
-};
+    window.open(`${api.defaults.baseURL}/qr/${code}`);
+  };
 
-const deleteCustomer = async (id) => {
-  if (!window.confirm("Delete this customer?")) return;
+  // 🗑️ DELETE CUSTOMER
+  const deleteCustomer = async () => {
+    try {
+      await api.delete(`/vehicle/${deleteId}`);
 
-  await api.delete(`/vehicle/${id}`);
-//   window.location.reload();
-setCustomers(prev => prev.filter(c => c.id !== id));
-};
+      setMessage("🗑️ Customer deleted");
+      setTimeout(() => setMessage(""), 2000);
 
-const [page, setPage] = useState(0);
-const [totalPages, setTotalPages] = useState(0);
+      setDeleteId(null);
+      loadCustomers();
 
-useEffect(() => {
-  api.get(`/vehicle/paginated?page=${page}&size=9`)
-    .then(res => {
-      setCustomers(res.data.content);
-      setTotalPages(res.data.totalPages);
-    });
-}, [page]);
+    } catch {
+      setError("❌ Delete failed");
+      setTimeout(() => setError(""), 2000);
+    }
+  };
 
-const updateCustomer = async () => {
-  await api.put(`/vehicle/${editingCustomer.id}`, editingCustomer);
+  // ✏️ UPDATE CUSTOMER
+  const updateCustomer = async () => {
+    await api.put(`/vehicle/${editingCustomer.id}`, editingCustomer);
 
-  setCustomers(prev =>
-    prev.map(c =>
-      c.id === editingCustomer.id ? editingCustomer : c
-    )
-  );
+    setMessage("✅ Customer updated");
+    setTimeout(() => setMessage(""), 2000);
 
-  setEditingCustomer(null);
-};
+    setEditingCustomer(null);
+    loadCustomers();
+  };
 
   return (
-    <div>
-      <h2>👥 Customers</h2>
+    <>
+      {/* 🔔 TOASTS */}
+      {message && (
+        <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {message}
+        </div>
+      )}
 
-      <table className="customers-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Vehicle</th>
-            <th>QR</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+      {error && (
+        <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {error}
+        </div>
+      )}
 
-        <tbody>
-          {customers.map(c => (
-            <tr key={c.id}>
-              <td>{c.id}</td>
-              <td>{c.ownerName}</td>
-              <td>{c.phoneNumber}</td>
-              <td>{c.vehicleNumber}</td>
-              <td className="qr-cell"><button style={{backgroundColor:"green", color:"black"}} onClick={() => downloadQR(c.uniqueCode)}>⬇️ Download QR</button></td>
-              <td>
-                <button style={{color:"black"}} onClick={() => setEditingCustomer(c)}>✏️Edit</button>
-                <button onClick={() => deleteCustomer(c.id)}>🗑️Delete</button>
-            </td>
+      <div>
+        <h2>👥 Customers</h2>
+
+        <table className="customers-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Vehicle</th>
+              <th>Address</th>
+              <th>QR</th>
+              <th>Action</th>
             </tr>
-          ))}
-        </tbody>
+          </thead>
 
-      </table>
-      <div className="pagination">
-  <button disabled={page === 0} onClick={() => setPage(page - 1)}>
-    ⬅ Prev
-  </button>
+          <tbody>
+            {customers.map(c => (
+              <tr key={c.id}>
+                <td>{c.id}</td>
+                <td>{c.ownerName}</td>
+                <td>{c.phoneNumber}</td>
+                <td>{c.vehicleNumber}</td>
+                <td>{c.address}</td>
 
-  <span>Page {page + 1} / {totalPages}</span>
+                <td>
+                  <button
+                    style={{ backgroundColor: "green", color: "black" }}
+                    onClick={() => downloadQR(c.uniqueCode)}
+                  >
+                    ⬇️ Download QR
+                  </button>
+                </td>
 
-  <button disabled={page === totalPages - 1} onClick={() => setPage(page + 1)}>
-    Next ➡
-  </button>
-</div>
+                <td>
+                  <button onClick={() => setEditingCustomer(c)}>✏️ Edit</button>
+                  <button onClick={() => setDeleteId(c.id)}>🗑️ Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-      {editingCustomer && (
-  <div className="modal-overlay">
-    <div className="modal">
+        {/* 🔄 PAGINATION */}
+        <div className="pagination">
+          <button disabled={page === 0} onClick={() => setPage(page - 1)}>
+            ⬅ Prev
+          </button>
 
-      <h3>Edit Customer</h3>
+          <span>Page {page + 1} / {totalPages || 1}</span>
 
-      <input
-        value={editingCustomer.ownerName}
-        onChange={e =>
-          setEditingCustomer({
-            ...editingCustomer,
-            ownerName: e.target.value
-          })
-        }
-      />
+          <button disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>
+            Next ➡
+          </button>
+        </div>
 
-      <input
-        value={editingCustomer.phoneNumber}
-        onChange={e =>
-          setEditingCustomer({
-            ...editingCustomer,
-            phoneNumber: e.target.value
-          })
-        }
-      />
+        {/* ✏️ EDIT MODAL */}
+        {editingCustomer && (
+          <div className="modal-overlay">
+            <div className="modal">
 
-      <input
-        value={editingCustomer.vehicleNumber}
-        onChange={e =>
-          setEditingCustomer({
-            ...editingCustomer,
-            vehicleNumber: e.target.value
-          })
-        }
-      />
+              <h3>Edit Customer</h3>
 
-      <div className="modal-buttons">
-        <button onClick={updateCustomer}>Save</button>
-        <button onClick={() => setEditingCustomer(null)}>Cancel</button>
+              <input
+                value={editingCustomer.ownerName}
+                onChange={e =>
+                  setEditingCustomer({
+                    ...editingCustomer,
+                    ownerName: e.target.value
+                  })
+                }
+              />
+
+              <input
+                value={editingCustomer.phoneNumber}
+                onChange={e =>
+                  setEditingCustomer({
+                    ...editingCustomer,
+                    phoneNumber: e.target.value
+                  })
+                }
+              />
+
+              <input
+                value={editingCustomer.vehicleNumber}
+                onChange={e =>
+                  setEditingCustomer({
+                    ...editingCustomer,
+                    vehicleNumber: e.target.value
+                  })
+                }
+              />
+
+              <input
+                value={editingCustomer.address || ""}
+                onChange={e =>
+                  setEditingCustomer({
+                    ...editingCustomer,
+                    address: e.target.value
+                  })
+                }
+              />
+
+              <div className="modal-buttons">
+                <button onClick={updateCustomer}>Save</button>
+                <button onClick={() => setEditingCustomer(null)}>Cancel</button>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* 🗑️ DELETE MODAL */}
+        {deleteId && (
+          <div className="modal-overlay">
+            <div className="modal">
+
+              <h3>Delete this customer?</h3>
+
+              <div className="modal-buttons">
+                <button onClick={deleteCustomer}>Yes, Delete</button>
+                <button onClick={() => setDeleteId(null)}>Cancel</button>
+              </div>
+
+            </div>
+          </div>
+        )}
+
       </div>
-
-    </div>
-  </div>
-)}
-    </div>
+    </>
   );
 }
 
