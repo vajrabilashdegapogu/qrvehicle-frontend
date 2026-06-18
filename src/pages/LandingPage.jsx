@@ -62,16 +62,18 @@ export default function LandingPage() {
 
       {/* TAG PREVIEW */}
       <section className="flex justify-center py-16">
-        <div className="w-[600px] h-[300px] bg-black border border-gray-600 rounded-xl flex justify-between items-center px-6">
-          <div>
-            <h2 className="text-xl font-bold">OwnTag</h2>
-            <p className="text-gray-400">Smart Vehicle QR</p>
-          </div>
-          <div className="bg-white p-2 rounded">
-            <img src="/qr-demo.png" className="w-20" alt="preview" />
-          </div>
-        </div>
-      </section>
+
+      <div className="w-[600px]">
+    
+      <img
+      src="/tag01.png"   // 👈 your image name (change if different)
+      alt="OwnTag Preview"
+      className="w-full rounded-xl shadow-2xl"
+      />
+
+      </div>
+
+    </section>
 
       {/* VIDEO */}
       <section className="text-center py-16 px-6">
