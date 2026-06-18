@@ -12,28 +12,32 @@ function AdminPage() {
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  // ✅ Check login status on load
   useEffect(() => {
     setIsLoggedIn(localStorage.getItem("admin") === "true");
   }, []);
 
   const submit = async () => {
+
     if (!form.ownerName || !form.phoneNumber || !form.vehicleNumber) {
-      alert("Please fill all fields");
+      setError("Please fill all fields");
+      setTimeout(() => setError(""), 2000);
       return;
     }
 
     try {
       const res = await api.post("/add", form);
 
-      // Download QR
-    //  window.open(`http://localhost:8080/api/qr/${res.data.uniqueCode}`);
-     window.open(`https://qrvehicle-backend-production.up.railway.app/api/qr/${res.data.uniqueCode}`);
+      setMessage("✅ QR Generated Successfully!");
 
-      alert("✅ QR Generated Successfully!");
+      // open QR after small delay (better UX)
+      setTimeout(() => {
+        window.open(`${api.defaults.baseURL}/qr/${res.data.uniqueCode}`);
+      }, 800);
 
       setForm({
         ownerName: "",
@@ -41,56 +45,77 @@ function AdminPage() {
         vehicleNumber: ""
       });
 
+      setTimeout(() => setMessage(""), 2500);
+
     } catch (err) {
-      alert("❌ Error generating QR");
+      setError("❌ Error generating QR");
+      setTimeout(() => setError(""), 2500);
     }
   };
 
   return (
-    <div className="admin-bg">
-      <div className="admin-container">
+    <>
+      {/* SUCCESS MESSAGE */}
+      {message && (
+        <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {message}
+        </div>
+      )}
 
-        <div className="admin-card">
+      {/* ERROR MESSAGE */}
+      {error && (
+        <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          {error}
+        </div>
+      )}
 
-          <h2>🚗 OwnTag </h2>
-          <p className="subtitle">Create QR for new vehicle</p>
+      <div className="admin-bg">
+        <div className="admin-container">
 
-          <input className="text-black"
-            placeholder="Owner Name"
-            value={form.ownerName}
-            onChange={e => setForm({...form, ownerName: e.target.value})}
-          />
+          <div className="admin-card">
 
-          <input className="text-black"
-            placeholder="Phone Number"
-            value={form.phoneNumber}
-            onChange={e => setForm({...form, phoneNumber: e.target.value})}
-          />
+            <h2>🚗 OwnTag</h2>
+            <p className="subtitle">Create QR for new vehicle</p>
 
-          <input className="text-black"
-            placeholder="Vehicle Number"
-            value={form.vehicleNumber}
-            onChange={e => setForm({...form, vehicleNumber: e.target.value})}
-          />
+            <input
+              className="text-black"
+              placeholder="Owner Name"
+              value={form.ownerName}
+              onChange={e => setForm({ ...form, ownerName: e.target.value })}
+            />
 
-          <button onClick={submit}>
-            Generate & Download QR
-          </button>
+            <input
+              className="text-black"
+              placeholder="Phone Number"
+              value={form.phoneNumber}
+              onChange={e => setForm({ ...form, phoneNumber: e.target.value })}
+            />
 
-          {/* 🔐 Show Login OR Dashboard based on state */}
-          {!isLoggedIn && (
-  <button
-    className="login-btn"
-    onClick={() => navigate("/login")}
-  >
-    🔐 Admin Login
-  </button>
-)}
+            <input
+              className="text-black"
+              placeholder="Vehicle Number"
+              value={form.vehicleNumber}
+              onChange={e => setForm({ ...form, vehicleNumber: e.target.value })}
+            />
+
+            <button onClick={submit}>
+              Generate & Download QR
+            </button>
+
+            {!isLoggedIn && (
+              <button
+                className="login-btn"
+                onClick={() => navigate("/login")}
+              >
+                🔐 Admin Login
+              </button>
+            )}
+
+          </div>
 
         </div>
-
       </div>
-    </div>
+    </>
   );
 }
 

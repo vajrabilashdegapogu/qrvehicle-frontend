@@ -7,8 +7,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  // baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080/api"
-  baseURL: "https://qrvehicle-backend-production.up.railway.app/api"
+  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080/api"
+    //  baseURL: "https://api.owntag.in/api || http://localhost:8080/api"
 });
 
 export default api;
