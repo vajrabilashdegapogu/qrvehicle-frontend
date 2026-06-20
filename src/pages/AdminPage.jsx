@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "../services/api";
 import "../css/AdminPage.css";
+import { toPng } from "html-to-image";
 import { useNavigate } from "react-router-dom";
 
 function AdminPage() {
@@ -16,13 +17,46 @@ function AdminPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const tagRef = useRef();
   const navigate = useNavigate();
 
   useEffect(() => {
     setIsLoggedIn(localStorage.getItem("admin") === "true");
   }, []);
 
-  // ✅ FINAL QR DOWNLOAD (ONLY QR)
+  // ✅ NEW TAG DOWNLOAD (WORKING)
+  const downloadTag = async (code, name, phone) => {
+    try {
+      const qrUrl = `${api.defaults.baseURL}/qr/${code}?t=${Date.now()}`;
+
+      const qrImg = tagRef.current.querySelector("#qr-img");
+
+      // force refresh
+      qrImg.src = "";
+      qrImg.src = qrUrl;
+
+      await new Promise((resolve, reject) => {
+        qrImg.onload = resolve;
+        qrImg.onerror = reject;
+      });
+
+      const dataUrl = await toPng(tagRef.current);
+
+      const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
+      const safePhone = phone.replace(/\D/g, "");
+
+      const link = document.createElement("a");
+      link.download = `${safeName}_${safePhone}.png`;
+      link.href = dataUrl;
+      link.click();
+
+    } catch {
+      setError("❌ Tag generation failed");
+      setTimeout(() => setError(""), 2000);
+    }
+  };
+
+  // ✅ SUBMIT (UPDATED LOGIC)
   const submit = async () => {
 
     if (!form.ownerName || !form.phoneNumber || !form.vehicleNumber || !form.address) {
@@ -34,21 +68,14 @@ function AdminPage() {
     try {
       const res = await api.post("/add", form);
 
-      const code = res.data.uniqueCode;
+      await downloadTag(
+        res.data.uniqueCode,
+        form.ownerName,
+        form.phoneNumber
+      );
 
-      // ✅ Clean filename
-      const safeName = form.ownerName.replace(/[^a-zA-Z0-9]/g, "_");
-      const safePhone = form.phoneNumber.replace(/\D/g, "");
+      setMessage("✅ QR Tag Generated!");
 
-      // ✅ Direct QR download from backend
-      const link = document.createElement("a");
-      link.href = `${api.defaults.baseURL}/qr/${code}`;
-      link.download = `${safeName}_${safePhone}.png`;
-      link.click();
-
-      setMessage("✅ QR Generated & Downloaded!");
-
-      // Reset form
       setForm({
         ownerName: "",
         phoneNumber: "",
@@ -117,7 +144,7 @@ function AdminPage() {
             />
 
             <button onClick={submit}>
-              Generate & Download QR
+              Generate & Download Tag
             </button>
 
             {!isLoggedIn && (
@@ -133,8 +160,25 @@ function AdminPage() {
 
         </div>
       </div>
+
+      {/* 🔥 HIDDEN TAG TEMPLATE */}
+      <div style={{ position: "absolute", left: "-9999px" }}>
+        <div ref={tagRef} className="relative w-[600px]">
+
+          <img src="/tag.png" alt="tag" className="w-full" />
+
+          <img
+            id="qr-img"
+            src=""
+            alt="qr"
+            className="absolute right-[35px] top-1/2 transform -translate-y-1/2 w-[160px] h-[160px]"
+          />
+
+        </div>
+      </div>
+
     </>
   );
 }
 
-export default AdminPage;
+export default AdminPage;  

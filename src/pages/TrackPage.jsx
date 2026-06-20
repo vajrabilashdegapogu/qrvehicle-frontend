@@ -13,7 +13,7 @@ export default function TrackPage() {
       setOrders(res.data);
     } catch {
       alert("No orders found");
-    }
+    } 
   };
 
   const getStep = (status) => {

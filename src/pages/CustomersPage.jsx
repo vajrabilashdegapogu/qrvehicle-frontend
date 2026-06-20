@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import api from "../services/api";
 import "../css/CustomersPage.css";
+import { toPng } from "html-to-image";
 
 function CustomersPage() {
 
@@ -13,6 +14,8 @@ function CustomersPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
+
+  const tagRef = useRef();
 
   // ✅ LOAD CUSTOMERS
   const loadCustomers = useCallback(() => {
@@ -31,15 +34,35 @@ function CustomersPage() {
     loadCustomers();
   }, [loadCustomers]);
 
-  // ✅ FINAL QR DOWNLOAD (ONLY QR)
-  const downloadQR = (c) => {
-    const safeName = c.ownerName.replace(/[^a-zA-Z0-9]/g, "_");
-    const safePhone = c.phoneNumber.replace(/\D/g, "");
+  // ✅ FINAL TAG DOWNLOAD (FULL TAG WITH QR)
+  const downloadTag = async (code, name, phone) => {
+    try {
+      const qrUrl = `${api.defaults.baseURL}/qr/${code}?t=${Date.now()}`;
 
-    const link = document.createElement("a");
-    link.href = `${api.defaults.baseURL}/qr/${c.uniqueCode}`;
-    link.download = `${safeName}_${safePhone}.png`;
-    link.click();
+      const qrImg = tagRef.current.querySelector("#qr-img");
+
+      // force refresh QR
+      qrImg.src = "";
+      qrImg.src = qrUrl;
+
+      await new Promise((resolve, reject) => {
+        qrImg.onload = resolve;
+        qrImg.onerror = reject;
+      });
+
+      const dataUrl = await toPng(tagRef.current);
+
+      const safeName = (name || "customer").replace(/[^a-zA-Z0-9]/g, "_");
+      const safePhone = (phone || "0000").replace(/\D/g, "");
+
+      const link = document.createElement("a");
+      link.download = `${safeName}_${safePhone}.png`;
+      link.href = dataUrl;
+      link.click();
+
+    } catch (err) {
+      console.error("Tag error", err);
+    }
   };
 
   // 🗑️ DELETE CUSTOMER
@@ -108,9 +131,9 @@ function CustomersPage() {
                 <td>
                   <button
                     style={{ backgroundColor: "green", color: "black" }}
-                    onClick={() => downloadQR(c)}
+                    onClick={() => downloadTag(c.uniqueCode, c.ownerName, c.phoneNumber)}
                   >
-                    ⬇️ Download QR
+                    ⬇️ Download Tag
                   </button>
                 </td>
 
@@ -192,8 +215,31 @@ function CustomersPage() {
             </div>
           </div>
         )}
-
       </div>
+
+      {/* 🔥 HIDDEN TAG TEMPLATE */}
+      <div style={{ position: "absolute", left: "-9999px" }}>
+        <div ref={tagRef} style={{ width: "600px", position: "relative" }}>
+
+          <img src="/tag.png" style={{ width: "100%" }} alt="tag" />
+
+          <img
+            id="qr-img"
+            src=""
+            style={{
+              position: "absolute",
+              right: "40px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: "150px",
+              height: "150px"
+            }}
+            alt="qr"
+          />
+
+        </div>
+      </div>
+
     </>
   );
 }

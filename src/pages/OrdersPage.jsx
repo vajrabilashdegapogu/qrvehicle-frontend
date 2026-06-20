@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import api from "../services/api";
 import "../css/OrdersPage.css";
+import { toPng } from "html-to-image";
 
 function OrdersPage() {
 
@@ -14,7 +15,9 @@ function OrdersPage() {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
 
-  // ✅ LOAD ORDERS
+  const tagRef = useRef();
+
+  // ✅ LOAD ORDERS (OLD UI KEPT)
   const loadOrders = useCallback(() => {
     api.get(`/order/paginated?page=${page}&size=4`)
       .then(res => {
@@ -31,26 +34,53 @@ function OrdersPage() {
     loadOrders();
   }, [loadOrders]);
 
-  // 🔄 UPDATE STATUS
+  // 🔄 UPDATE STATUS (UNCHANGED)
   const updateStatus = async (id, status) => {
     await api.put(`/order/${id}/status?status=${status}`);
     loadOrders();
   };
 
-  // ✅ GENERATE QR ONLY
+  // ✅ NEW TAG DOWNLOAD (YOUR WORKING LOGIC)
+  const downloadTag = async (code, name, phone) => {
+    try {
+      const qrUrl = `${api.defaults.baseURL}/qr/${code}?t=${Date.now()}`;
+
+      const qrImg = tagRef.current.querySelector("#qr-img");
+
+      qrImg.src = "";
+      qrImg.src = qrUrl;
+
+      await new Promise((resolve, reject) => {
+        qrImg.onload = resolve;
+        qrImg.onerror = reject;
+      });
+
+      const dataUrl = await toPng(tagRef.current);
+
+      const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
+      const safePhone = phone.replace(/\D/g, "");
+
+      const link = document.createElement("a");
+      link.download = `${safeName}_${safePhone}.png`;
+      link.href = dataUrl;
+      link.click();
+
+    } catch {
+      setError("❌ Tag download failed");
+      setTimeout(() => setError(""), 2000);
+    }
+  };
+
+  // ✅ GENERATE QR + TAG (UPDATED)
   const generateQR = async (o) => {
     try {
       const res = await api.post(`/from-order/${o.id}`);
 
-      const code = res.data.uniqueCode;
-
-      const safeName = o.name.replace(/[^a-zA-Z0-9]/g, "_");
-      const safePhone = o.phone.replace(/\D/g, "");
-
-      const link = document.createElement("a");
-      link.href = `${api.defaults.baseURL}/qr/${code}`;
-      link.download = `${safeName}_${safePhone}.png`;
-      link.click();
+      await downloadTag(
+        res.data.uniqueCode,
+        o.name,
+        o.phone
+      );
 
       setMessage("✅ QR Generated & Customer Added!");
       setTimeout(() => setMessage(""), 2500);
@@ -63,7 +93,7 @@ function OrdersPage() {
     }
   };
 
-  // 🗑️ DELETE ORDER
+  // 🗑️ DELETE ORDER (UNCHANGED)
   const deleteOrder = async () => {
     try {
       await api.delete(`/order/${deleteId}`);
@@ -80,7 +110,7 @@ function OrdersPage() {
     }
   };
 
-  // ✏️ UPDATE ORDER
+  // ✏️ UPDATE ORDER (UNCHANGED)
   const updateOrder = async () => {
     await api.put(`/order/${editingOrder.id}`, editingOrder);
 
@@ -192,7 +222,6 @@ function OrdersPage() {
         {editingOrder && (
           <div className="modal-overlay">
             <div className="modal">
-
               <h3>Edit Order</h3>
 
               <input
@@ -227,7 +256,6 @@ function OrdersPage() {
                 <button onClick={updateOrder}>Save</button>
                 <button onClick={() => setEditingOrder(null)}>Cancel</button>
               </div>
-
             </div>
           </div>
         )}
@@ -236,18 +264,31 @@ function OrdersPage() {
         {deleteId && (
           <div className="modal-overlay">
             <div className="modal">
-
               <h3>Delete this order?</h3>
 
               <div className="modal-buttons">
                 <button onClick={deleteOrder}>Yes, Delete</button>
                 <button onClick={() => setDeleteId(null)}>Cancel</button>
               </div>
-
             </div>
           </div>
         )}
+      </div>
 
+      {/* 🔥 TAG TEMPLATE */}
+      <div style={{ position: "absolute", left: "-9999px" }}>
+        <div ref={tagRef} className="relative w-[600px]">
+
+          <img src="/tag.png" alt="tag" className="w-full" />
+
+          <img
+            id="qr-img"
+            src=""
+            alt="qr"
+            className="absolute right-[35px] top-1/2 transform -translate-y-1/2 w-[160px] h-[160px]"
+          />
+
+        </div>
       </div>
     </>
   );
