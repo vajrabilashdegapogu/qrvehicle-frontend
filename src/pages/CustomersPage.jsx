@@ -1,7 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
 import api from "../services/api";
-import { toPng } from "html-to-image";
-import { useRef } from "react";
 import "../css/CustomersPage.css";
 
 function CustomersPage() {
@@ -15,22 +13,6 @@ function CustomersPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
-
-  const tagRef = useRef();
-const [qrCode, setQrCode] = useState("");
-
-const downloadTag = (code) => {
-  setQrCode(code);
-
-  setTimeout(() => {
-    toPng(tagRef.current).then((dataUrl) => {
-      const link = document.createElement("a");
-      link.download = `owntag-${code}.png`;
-      link.href = dataUrl;
-      link.click();
-    });
-  }, 400);
-};
 
   // ✅ LOAD CUSTOMERS
   const loadCustomers = useCallback(() => {
@@ -49,23 +31,25 @@ const downloadTag = (code) => {
     loadCustomers();
   }, [loadCustomers]);
 
-  // 📥 DOWNLOAD QR
-  const downloadQR = (code) => {
-    // window.open(`${api.defaults.baseURL}/qr/${code}`);
-    downloadTag(code);
+  // ✅ FINAL QR DOWNLOAD (ONLY QR)
+  const downloadQR = (c) => {
+    const safeName = c.ownerName.replace(/[^a-zA-Z0-9]/g, "_");
+    const safePhone = c.phoneNumber.replace(/\D/g, "");
+
+    const link = document.createElement("a");
+    link.href = `${api.defaults.baseURL}/qr/${c.uniqueCode}`;
+    link.download = `${safeName}_${safePhone}.png`;
+    link.click();
   };
 
   // 🗑️ DELETE CUSTOMER
   const deleteCustomer = async () => {
     try {
       await api.delete(`/vehicle/${deleteId}`);
-
       setMessage("🗑️ Customer deleted");
       setTimeout(() => setMessage(""), 2000);
-
       setDeleteId(null);
       loadCustomers();
-
     } catch {
       setError("❌ Delete failed");
       setTimeout(() => setError(""), 2000);
@@ -75,17 +59,15 @@ const downloadTag = (code) => {
   // ✏️ UPDATE CUSTOMER
   const updateCustomer = async () => {
     await api.put(`/vehicle/${editingCustomer.id}`, editingCustomer);
-
     setMessage("✅ Customer updated");
     setTimeout(() => setMessage(""), 2000);
-
     setEditingCustomer(null);
     loadCustomers();
   };
 
   return (
     <>
-      {/* 🔔 TOASTS */}
+      {/* TOASTS */}
       {message && (
         <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           {message}
@@ -126,7 +108,7 @@ const downloadTag = (code) => {
                 <td>
                   <button
                     style={{ backgroundColor: "green", color: "black" }}
-                    onClick={() => downloadQR(c.uniqueCode)}
+                    onClick={() => downloadQR(c)}
                   >
                     ⬇️ Download QR
                   </button>
@@ -141,7 +123,7 @@ const downloadTag = (code) => {
           </tbody>
         </table>
 
-        {/* 🔄 PAGINATION */}
+        {/* PAGINATION */}
         <div className="pagination">
           <button disabled={page === 0} onClick={() => setPage(page - 1)}>
             ⬅ Prev
@@ -154,7 +136,7 @@ const downloadTag = (code) => {
           </button>
         </div>
 
-        {/* ✏️ EDIT MODAL */}
+        {/* EDIT MODAL */}
         {editingCustomer && (
           <div className="modal-overlay">
             <div className="modal">
@@ -164,40 +146,28 @@ const downloadTag = (code) => {
               <input
                 value={editingCustomer.ownerName}
                 onChange={e =>
-                  setEditingCustomer({
-                    ...editingCustomer,
-                    ownerName: e.target.value
-                  })
+                  setEditingCustomer({ ...editingCustomer, ownerName: e.target.value })
                 }
               />
 
               <input
                 value={editingCustomer.phoneNumber}
                 onChange={e =>
-                  setEditingCustomer({
-                    ...editingCustomer,
-                    phoneNumber: e.target.value
-                  })
+                  setEditingCustomer({ ...editingCustomer, phoneNumber: e.target.value })
                 }
               />
 
               <input
                 value={editingCustomer.vehicleNumber}
                 onChange={e =>
-                  setEditingCustomer({
-                    ...editingCustomer,
-                    vehicleNumber: e.target.value
-                  })
+                  setEditingCustomer({ ...editingCustomer, vehicleNumber: e.target.value })
                 }
               />
 
               <input
                 value={editingCustomer.address || ""}
                 onChange={e =>
-                  setEditingCustomer({
-                    ...editingCustomer,
-                    address: e.target.value
-                  })
+                  setEditingCustomer({ ...editingCustomer, address: e.target.value })
                 }
               />
 
@@ -210,36 +180,20 @@ const downloadTag = (code) => {
           </div>
         )}
 
-        {/* 🗑️ DELETE MODAL */}
+        {/* DELETE MODAL */}
         {deleteId && (
           <div className="modal-overlay">
             <div className="modal">
-
               <h3>Delete this customer?</h3>
-
               <div className="modal-buttons">
                 <button onClick={deleteCustomer}>Yes, Delete</button>
                 <button onClick={() => setDeleteId(null)}>Cancel</button>
               </div>
-
             </div>
           </div>
         )}
 
       </div>
-      {/* 🔥 HIDDEN TAG TEMPLATE */}
-<div style={{ position: "absolute", left: "-9999px" }}>
-  <div ref={tagRef} className="relative w-[600px]">
-
-    <img src="/tag.png" className="w-full" alt="tag-preview"  />
-
-    <img
-      src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://www.owntag.in/v/${qrCode}`}
-      className="absolute right-[35px] top-1/2 transform -translate-y-1/2 w-[160px] h-[160px]" alt="tag-preview"
-    />
-
-  </div>
-</div>
     </>
   );
 }

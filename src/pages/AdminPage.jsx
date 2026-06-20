@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
 import "../css/AdminPage.css";
-import { toPng } from "html-to-image";
-import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 function AdminPage() {
@@ -18,28 +16,13 @@ function AdminPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const tagRef = useRef();
-const [qrCode, setQrCode] = useState("");
-
-const downloadTag = (code) => {
-  setQrCode(code);
-
-  setTimeout(() => {
-    toPng(tagRef.current).then((dataUrl) => {
-      const link = document.createElement("a");
-      link.download = `owntag-${code}.png`;
-      link.href = dataUrl;
-      link.click();
-    });
-  }, 400);
-};
-
   const navigate = useNavigate();
 
   useEffect(() => {
     setIsLoggedIn(localStorage.getItem("admin") === "true");
   }, []);
 
+  // ✅ FINAL QR DOWNLOAD (ONLY QR)
   const submit = async () => {
 
     if (!form.ownerName || !form.phoneNumber || !form.vehicleNumber || !form.address) {
@@ -51,13 +34,21 @@ const downloadTag = (code) => {
     try {
       const res = await api.post("/add", form);
 
-      setMessage("✅ QR Generated Successfully!");
+      const code = res.data.uniqueCode;
 
-      // open QR after small delay (better UX)
-      setTimeout(() => {
-        downloadTag(res.data.uniqueCode);
-      }, 800);
+      // ✅ Clean filename
+      const safeName = form.ownerName.replace(/[^a-zA-Z0-9]/g, "_");
+      const safePhone = form.phoneNumber.replace(/\D/g, "");
 
+      // ✅ Direct QR download from backend
+      const link = document.createElement("a");
+      link.href = `${api.defaults.baseURL}/qr/${code}`;
+      link.download = `${safeName}_${safePhone}.png`;
+      link.click();
+
+      setMessage("✅ QR Generated & Downloaded!");
+
+      // Reset form
       setForm({
         ownerName: "",
         phoneNumber: "",
@@ -67,7 +58,7 @@ const downloadTag = (code) => {
 
       setTimeout(() => setMessage(""), 2500);
 
-    } catch (err) {
+    } catch {
       setError("❌ Error generating QR");
       setTimeout(() => setError(""), 2500);
     }
@@ -142,19 +133,6 @@ const downloadTag = (code) => {
 
         </div>
       </div>
-      {/* 🔥 HIDDEN TAG TEMPLATE */}
-<div style={{ position: "absolute", left: "-9999px" }}>
-  <div ref={tagRef} className="relative w-[600px]">
-
-    <img src="/tag.png" className="w-full" alt="tag-preview"/>
-
-    <img
-      src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://www.owntag.in/v/${qrCode}`}
-      className="absolute right-[35px] top-1/2 transform -translate-y-1/2 w-[160px] h-[160px]" alt="tag-preview"
-    />
-
-  </div>
-</div>
     </>
   );
 }

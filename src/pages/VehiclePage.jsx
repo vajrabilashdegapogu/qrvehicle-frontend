@@ -19,23 +19,48 @@ function VehiclePage() {
     vehicleNumber: ""
   });
 
+  // ✅ FIX: FORCE REFRESH + CLEAR OLD DATA
   useEffect(() => {
-    api.get(`/vehicle/${code}`)
-      .then(res => setVehicle(res.data))
-      .catch(err => console.error(err));
-  }, [code]);
+  let isMounted = true;
+
+  setVehicle(null); // clear old data
+
+  api.get(`/vehicle/${code}`, {
+    headers: {
+      "Cache-Control": "no-cache",
+      "Pragma": "no-cache"
+    },
+    params: {
+      t: Date.now() // force unique request
+    }
+  })
+  .then(res => {
+    if (isMounted) {
+      setVehicle(res.data);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+  });
+
+  return () => {
+    isMounted = false;
+  };
+
+}, [code]);
+console.log("Loaded code:", code);
 
   const callNow = () => {
     setMessage("📞 Connecting call...");
     setTimeout(() => {
-      window.location.href = `https://api.owntag.in/api/call/${code}`;
+      window.location.href = `${api.defaults.baseURL}/call/${code}`;
     }, 800);
   };
 
   const whatsapp = () => {
     setMessage("Opening WhatsApp...");
     setTimeout(() => {
-      window.location.href = `https://api.owntag.in/api/whatsapp/${code}`;
+      window.location.href = `${api.defaults.baseURL}/whatsapp/${code}`;
     }, 800);
   };
 
@@ -66,7 +91,7 @@ function VehiclePage() {
 
       setTimeout(() => setMessage(""), 2500);
 
-    } catch (err) {
+    } catch {
       setError("❌ Error placing order");
       setTimeout(() => setError(""), 2500);
     }
@@ -97,8 +122,12 @@ function VehiclePage() {
             <h2>🚗 QR Vehicle</h2>
 
             <div style={{ backgroundColor: "orange" }} className="vehicle-info">
-              <p style={{ color: "black" }}><b>Owner:</b> {vehicle.ownerName}</p>
-              <p style={{ color: "black" }}><b>Vehicle No:</b> {vehicle.vehicleNumber}</p>
+              <p style={{ color: "black" }}>
+                <b>Owner:</b> {vehicle.ownerName}
+              </p>
+              <p style={{ color: "black" }}>
+                <b>Vehicle No:</b> {vehicle.vehicleNumber}
+              </p>
             </div>
 
             <div className="buttons">

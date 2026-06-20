@@ -1,18 +1,21 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-// import AdminPage from "./pages/AdminPage";
+import { BrowserRouter, Route, Routes, useParams } from "react-router-dom";
+
 import VehiclePage from "./pages/VehiclePage";
 import OrdersPage from "./pages/OrdersPage";
-// import CreateQRPage from "./pages/CreateQRPage";
 import Dashboard from "./pages/Dashboard";
 import PrivateRoute from "./Auth/PrivateRoute";
 import LoginPage from "./pages/LoginPage";
 import LandingPage from "./pages/LandingPage";
 import TrackPage from "./pages/TrackPage";
-// import DashboardHome from "./pages/DashBoardHome";
 
+// ✅ WRAPPER TO FORCE RELOAD ON QR CHANGE
+function VehiclePageWrapper() {
+  const { code } = useParams();
+  return <VehiclePage key={code} />;
+}
 
-function App(){
-  return(
+function App() {
+  return (
     <BrowserRouter>
       <Routes>
 
@@ -22,19 +25,18 @@ function App(){
         {/* 🔐 Track Page */}
         <Route path="/track" element={<TrackPage />} />
 
-        {/* 🚗 Public QR page */}
-        <Route path="/v/:code" element={<VehiclePage />} />
+        {/* 🚗 Public QR page (FIXED) */}
+        <Route path="/v/:code" element={<VehiclePageWrapper />} />
 
-        {/* 🧾 Orders (optional) */}
+        {/* 🧾 Orders */}
         <Route path="/orders" element={<OrdersPage />} />
 
-        {/* ➕ Create QR (Admin form page) */}
+        {/* 🏠 Landing */}
         <Route path="/" element={<LandingPage />} />
-        
 
         {/* 🔐 Protected Dashboard */}
-        <Route 
-          path="/admin" 
+        <Route
+          path="/admin"
           element={
             <PrivateRoute>
               <Dashboard />
@@ -46,6 +48,5 @@ function App(){
     </BrowserRouter>
   );
 }
-
 
 export default App;

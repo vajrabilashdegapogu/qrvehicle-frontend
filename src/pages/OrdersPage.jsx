@@ -1,8 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import api from "../services/api";
 import "../css/OrdersPage.css";
-import { toPng } from "html-to-image";
-import { useRef } from "react";
 
 function OrdersPage() {
 
@@ -16,23 +14,7 @@ function OrdersPage() {
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState(null);
 
-  const tagRef = useRef();
-const [qrCode, setQrCode] = useState("");
-
-const downloadTag = (code) => {
-  setQrCode(code);
-
-  setTimeout(() => {
-    toPng(tagRef.current).then((dataUrl) => {
-      const link = document.createElement("a");
-      link.download = `owntag-${code}.png`;
-      link.href = dataUrl;
-      link.click();
-    });
-  }, 400);
-};
-
-  // ✅ LOAD ORDERS (FIXED WITH useCallback)
+  // ✅ LOAD ORDERS
   const loadOrders = useCallback(() => {
     api.get(`/order/paginated?page=${page}&size=4`)
       .then(res => {
@@ -55,20 +37,29 @@ const downloadTag = (code) => {
     loadOrders();
   };
 
-  // ⚡ GENERATE QR
-  const generateQR = async (orderId) => {
+  // ✅ GENERATE QR ONLY
+  const generateQR = async (o) => {
     try {
-      const res = await api.post(`/from-order/${orderId}`);
+      const res = await api.post(`/from-order/${o.id}`);
 
-      // window.open(`${api.defaults.baseURL}/qr/${res.data.uniqueCode}`);
-      downloadTag(res.data.uniqueCode);
+      const code = res.data.uniqueCode;
+
+      const safeName = o.name.replace(/[^a-zA-Z0-9]/g, "_");
+      const safePhone = o.phone.replace(/\D/g, "");
+
+      const link = document.createElement("a");
+      link.href = `${api.defaults.baseURL}/qr/${code}`;
+      link.download = `${safeName}_${safePhone}.png`;
+      link.click();
 
       setMessage("✅ QR Generated & Customer Added!");
       setTimeout(() => setMessage(""), 2500);
 
+      loadOrders();
+
     } catch {
       setError("❌ Error generating QR");
-      setTimeout(() => setError(""), 2500);
+      setTimeout(() => setError(""), 2000);
     }
   };
 
@@ -102,7 +93,7 @@ const downloadTag = (code) => {
 
   return (
     <>
-      {/* 🔔 TOAST MESSAGES */}
+      {/* TOASTS */}
       {message && (
         <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           {message}
@@ -153,15 +144,19 @@ const downloadTag = (code) => {
                     Process
                   </button>
 
-                  <button style={{ backgroundColor: "green" }}
-                    onClick={() => updateStatus(o.id, "DELIVERED")}>
+                  <button
+                    style={{ backgroundColor: "green" }}
+                    onClick={() => updateStatus(o.id, "DELIVERED")}
+                  >
                     Deliver
                   </button>
                 </td>
 
                 <td>
-                  <button style={{ backgroundColor: "green" }}
-                    onClick={() => generateQR(o.id)}>
+                  <button
+                    style={{ backgroundColor: "green" }}
+                    onClick={() => generateQR(o)}
+                  >
                     ⚡ Generate QR
                   </button>
                 </td>
@@ -175,13 +170,9 @@ const downloadTag = (code) => {
           </tbody>
         </table>
 
-        {/* 🔄 PAGINATION */}
+        {/* PAGINATION */}
         <div className="pagination">
-
-          <button
-            disabled={page === 0}
-            onClick={() => setPage(prev => Math.max(prev - 1, 0))}
-          >
+          <button disabled={page === 0} onClick={() => setPage(page - 1)}>
             ⬅ Prev
           </button>
 
@@ -191,14 +182,13 @@ const downloadTag = (code) => {
 
           <button
             disabled={page >= totalPages - 1}
-            onClick={() => setPage(prev => prev + 1)}
+            onClick={() => setPage(page + 1)}
           >
             Next ➡
           </button>
-
         </div>
 
-        {/* ✏️ EDIT MODAL */}
+        {/* EDIT MODAL */}
         {editingOrder && (
           <div className="modal-overlay">
             <div className="modal">
@@ -242,7 +232,7 @@ const downloadTag = (code) => {
           </div>
         )}
 
-        {/* 🗑️ DELETE MODAL */}
+        {/* DELETE MODAL */}
         {deleteId && (
           <div className="modal-overlay">
             <div className="modal">
@@ -259,19 +249,6 @@ const downloadTag = (code) => {
         )}
 
       </div>
-      {/* 🔥 HIDDEN TAG TEMPLATE */}
-<div style={{ position: "absolute", left: "-9999px" }}>
-  <div ref={tagRef} className="relative w-[600px]">
-
-    <img src="/tag.png" className="w-full" alt="tag-preview" />
-
-    <img
-      src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://www.owntag.in/v/${qrCode}`}
-      className="absolute right-[35px] top-1/2 transform -translate-y-1/2 w-[160px] h-[160px]" alt="tag-preview"
-    />
-
-  </div>
-</div>
     </>
   );
 }
