@@ -15,7 +15,7 @@ function LoginPage() {
 
   const login = () => {
 
-    if (username === "admin" && password === "Deepuabhi@0399") {
+    if (username === "admin" && password === "AbhiAdmin@0399") {
 
       localStorage.setItem("admin", "true");
 

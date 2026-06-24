@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import api from "../services/api";
 import "../css/OrdersPage.css";
-import { toPng } from "html-to-image";
+// import { toPng } from "html-to-image";
 
 function OrdersPage() {
 
@@ -40,43 +40,67 @@ function OrdersPage() {
     loadOrders();
   };
 
+  //PDF download
+  const downloadPDF = async (code, name, phone) => {
+  try {
+    const safeName = (name || "customer").replace(/[^a-zA-Z0-9]/g, "_");
+    const first5 = (phone || "00000").replace(/\D/g, "").substring(0, 5);
+
+    const res = await api.get(`/tag-pdf/${code}`, {
+      responseType: "blob"   // 🔥 IMPORTANT
+    });
+
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeName}_${first5}.pdf`; // ✅ FINAL NAME
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+  } catch {
+    console.error("PDF download failed");
+  }
+};
+
   // ✅ NEW TAG DOWNLOAD (YOUR WORKING LOGIC)
-  const downloadTag = async (code, name, phone) => {
-    try {
-      const qrUrl = `${api.defaults.baseURL}/qr/${code}?t=${Date.now()}`;
+  // const downloadTag = async (code, name, phone) => {
+  //   try {
+  //     const qrUrl = `${api.defaults.baseURL}/qr/${code}?t=${Date.now()}`;
 
-      const qrImg = tagRef.current.querySelector("#qr-img");
+  //     const qrImg = tagRef.current.querySelector("#qr-img");
 
-      qrImg.src = "";
-      qrImg.src = qrUrl;
+  //     qrImg.src = "";
+  //     qrImg.src = qrUrl;
 
-      await new Promise((resolve, reject) => {
-        qrImg.onload = resolve;
-        qrImg.onerror = reject;
-      });
+  //     await new Promise((resolve, reject) => {
+  //       qrImg.onload = resolve;
+  //       qrImg.onerror = reject;
+  //     });
 
-      const dataUrl = await toPng(tagRef.current);
+  //     const dataUrl = await toPng(tagRef.current);
 
-      const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
-      const safePhone = phone.replace(/\D/g, "");
+  //     const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
+  //     const safePhone = phone.replace(/\D/g, "");
 
-      const link = document.createElement("a");
-      link.download = `${safeName}_${safePhone}.png`;
-      link.href = dataUrl;
-      link.click();
+  //     const link = document.createElement("a");
+  //     link.download = `${safeName}_${safePhone}.png`;
+  //     link.href = dataUrl;
+  //     link.click();
 
-    } catch {
-      setError("❌ Tag download failed");
-      setTimeout(() => setError(""), 2000);
-    }
-  };
+  //   } catch {
+  //     setError("❌ Tag download failed");
+  //     setTimeout(() => setError(""), 2000);
+  //   }
+  // };
 
   // ✅ GENERATE QR + TAG (UPDATED)
   const generateQR = async (o) => {
     try {
       const res = await api.post(`/from-order/${o.id}`);
 
-      await downloadTag(
+      await downloadPDF(
         res.data.uniqueCode,
         o.name,
         o.phone

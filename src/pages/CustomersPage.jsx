@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import api from "../services/api";
 import "../css/CustomersPage.css";
-import { toPng } from "html-to-image";
+// import { toPng } from "html-to-image";
 
 function CustomersPage() {
 
@@ -34,36 +34,61 @@ function CustomersPage() {
     loadCustomers();
   }, [loadCustomers]);
 
+
+  //PDF download
+  const downloadPDF = async (code, name, phone) => {
+  try {
+    const safeName = (name || "customer").replace(/[^a-zA-Z0-9]/g, "_");
+    const first5 = (phone || "00000").replace(/\D/g, "").substring(0, 5);
+
+    const res = await api.get(`/tag-pdf/${code}`, {
+      responseType: "blob"   // 🔥 IMPORTANT
+    });
+
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeName}_${first5}.pdf`; // ✅ FINAL NAME
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+  } catch {
+    console.error("PDF download failed");
+  }
+};
+
   // ✅ FINAL TAG DOWNLOAD (FULL TAG WITH QR)
-  const downloadTag = async (code, name, phone) => {
-    try {
-      const qrUrl = `${api.defaults.baseURL}/qr/${code}?t=${Date.now()}`;
+  // const downloadTag = async (code, name, phone) => {
+  //   try {
+  //     const qrUrl = `${api.defaults.baseURL}/qr/${code}?t=${Date.now()}`;
 
-      const qrImg = tagRef.current.querySelector("#qr-img");
+  //     const qrImg = tagRef.current.querySelector("#qr-img");
 
-      // force refresh QR
-      qrImg.src = "";
-      qrImg.src = qrUrl;
+  //     // force refresh QR
+  //     qrImg.src = "";
+  //     qrImg.src = qrUrl;
 
-      await new Promise((resolve, reject) => {
-        qrImg.onload = resolve;
-        qrImg.onerror = reject;
-      });
+  //     await new Promise((resolve, reject) => {
+  //       qrImg.onload = resolve;
+  //       qrImg.onerror = reject;
+  //     });
 
-      const dataUrl = await toPng(tagRef.current);
+  //     const dataUrl = await toPng(tagRef.current);
 
-      const safeName = (name || "customer").replace(/[^a-zA-Z0-9]/g, "_");
-      const safePhone = (phone || "0000").replace(/\D/g, "");
+  //     const safeName = (name || "customer").replace(/[^a-zA-Z0-9]/g, "_");
+  //     const safePhone = (phone || "0000").replace(/\D/g, "");
 
-      const link = document.createElement("a");
-      link.download = `${safeName}_${safePhone}.png`;
-      link.href = dataUrl;
-      link.click();
+  //     const link = document.createElement("a");
+  //     link.download = `${safeName}_${safePhone}.png`;
+  //     link.href = dataUrl;
+  //     link.click();
 
-    } catch (err) {
-      console.error("Tag error", err);
-    }
-  };
+  //   } catch (err) {
+  //     console.error("Tag error", err);
+  //   }
+  // };
 
   // 🗑️ DELETE CUSTOMER
   const deleteCustomer = async () => {
@@ -131,7 +156,7 @@ function CustomersPage() {
                 <td>
                   <button
                     style={{ backgroundColor: "green", color: "black" }}
-                    onClick={() => downloadTag(c.uniqueCode, c.ownerName, c.phoneNumber)}
+                    onClick={() => downloadPDF(c.uniqueCode, c.ownerName, c.phoneNumber)}
                   >
                     ⬇️ Download Tag
                   </button>

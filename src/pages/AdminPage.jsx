@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import api from "../services/api";
 import "../css/AdminPage.css";
-import { toPng } from "html-to-image";
+// import { toPng } from "html-to-image";
 import { useNavigate } from "react-router-dom";
 
 function AdminPage() {
@@ -24,39 +24,61 @@ function AdminPage() {
     setIsLoggedIn(localStorage.getItem("admin") === "true");
   }, []);
 
-  // ✅ NEW TAG DOWNLOAD (WORKING)
-  const downloadTag = async (code, name, phone) => {
-    try {
-      const qrUrl = `${api.defaults.baseURL}/qr/${code}?t=${Date.now()}`;
+  // ✅ PDF DOWNLOAD
+  const downloadPDF = async (code, name, phone) => {
+  try {
+    const safeName = (name || "customer").replace(/[^a-zA-Z0-9]/g, "_");
+    const first5 = (phone || "00000").replace(/\D/g, "").substring(0, 5);
 
-      const qrImg = tagRef.current.querySelector("#qr-img");
+    const res = await api.get(`/tag-pdf/${code}`, {
+      responseType: "blob"   // 🔥 IMPORTANT
+    });
 
-      // force refresh
-      qrImg.src = "";
-      qrImg.src = qrUrl;
+    const url = window.URL.createObjectURL(new Blob([res.data]));
 
-      await new Promise((resolve, reject) => {
-        qrImg.onload = resolve;
-        qrImg.onerror = reject;
-      });
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeName}_${first5}.pdf`; // ✅ FINAL NAME
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 
-      const dataUrl = await toPng(tagRef.current);
+  } catch {
+    console.error("PDF download failed");
+  }
+};
 
-      const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
-      const safePhone = phone.replace(/\D/g, "");
+  // ✅ PNG TAG DOWNLOAD (optional)
+  // const downloadTag = async (code, name, phone) => {
+  //   try {
+  //     const qrUrl = `${api.defaults.baseURL}/qr/${code}?t=${Date.now()}`;
+  //     const qrImg = tagRef.current.querySelector("#qr-img");
 
-      const link = document.createElement("a");
-      link.download = `${safeName}_${safePhone}.png`;
-      link.href = dataUrl;
-      link.click();
+  //     qrImg.src = "";
+  //     qrImg.src = qrUrl;
 
-    } catch {
-      setError("❌ Tag generation failed");
-      setTimeout(() => setError(""), 2000);
-    }
-  };
+  //     await new Promise((resolve, reject) => {
+  //       qrImg.onload = resolve;
+  //       qrImg.onerror = reject;
+  //     });
 
-  // ✅ SUBMIT (UPDATED LOGIC)
+  //     const dataUrl = await toPng(tagRef.current, { pixelRatio: 3 });
+
+  //     const safeName = (name || "customer").replace(/[^a-zA-Z0-9]/g, "_");
+  //     const safePhone = (phone || "0000").replace(/\D/g, "");
+
+  //     const link = document.createElement("a");
+  //     link.download = `${safeName}_${safePhone}.png`;
+  //     link.href = dataUrl;
+  //     link.click();
+
+  //   } catch {
+  //     setError("❌ Tag generation failed");
+  //     setTimeout(() => setError(""), 2000);
+  //   }
+  // };
+
+  // ✅ SUBMIT
   const submit = async () => {
 
     if (!form.ownerName || !form.phoneNumber || !form.vehicleNumber || !form.address) {
@@ -68,7 +90,8 @@ function AdminPage() {
     try {
       const res = await api.post("/add", form);
 
-      await downloadTag(
+      // 🔥 USE PDF (BEST QUALITY)
+      downloadPDF(
         res.data.uniqueCode,
         form.ownerName,
         form.phoneNumber
@@ -93,14 +116,14 @@ function AdminPage() {
 
   return (
     <>
-      {/* SUCCESS MESSAGE */}
+      {/* SUCCESS */}
       {message && (
         <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           {message}
         </div>
       )}
 
-      {/* ERROR MESSAGE */}
+      {/* ERROR */}
       {error && (
         <div className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           {error}
@@ -161,24 +184,55 @@ function AdminPage() {
         </div>
       </div>
 
-      {/* 🔥 HIDDEN TAG TEMPLATE */}
+      {/* 🔥 HIDDEN TAG TEMPLATE (FOR PNG ONLY) */}
       <div style={{ position: "absolute", left: "-9999px" }}>
-        <div ref={tagRef} className="relative w-[600px]">
-
-          <img src="/tag.png" alt="tag" className="w-full" />
+        <div
+          ref={tagRef}
+          style={{
+            width: "748px",
+            height: "1661px",
+            position: "relative"
+          }}
+        >
 
           <img
-            id="qr-img"
-            src=""
-            alt="qr"
-            className="absolute right-[35px] top-1/2 transform -translate-y-1/2 w-[160px] h-[160px]"
+            src="/tag.png"
+            alt="tag"
+            style={{ width: "100%", height: "100%" }}
           />
+
+          {/* ✅ PIXEL PERFECT QR */}
+          <div
+            style={{
+              position: "absolute",
+              top: "420px",
+              left: "430px",
+              width: "260px",
+              height: "260px",
+              backgroundColor: "#fff",
+              borderRadius: "30px",
+              border: "6px solid #ff7a00",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden"
+            }}
+          >
+            <img
+              id="qr-img"
+              src=""
+              alt="qr"
+              style={{
+                width: "200px",
+                height: "200px"
+              }}
+            />
+          </div>
 
         </div>
       </div>
-
     </>
   );
 }
 
-export default AdminPage;  
+export default AdminPage; 
