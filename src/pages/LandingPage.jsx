@@ -49,17 +49,35 @@ export default function LandingPage() {
 
     } catch (err) {
 
-      const message =
-        err.response?.data?.message ||
-        err.response?.data ||
-        "Unable to place order.";
+  let message = "Unable to place order.";
 
-      setError(message);
+  const data = err.response?.data;
 
-      setTimeout(() => {
-        setError("");
-      }, 3000);
-    }
+  if (typeof data === "string") {
+    message = data;
+  }
+  else if (data?.message) {
+    message = data.message;
+  }
+  else if (data?.errors) {
+    message = Object.values(data.errors).join("\n");
+  }
+  else if (data?.phone) {
+    message = data.phone;
+  }
+  else if (data?.vehicleNumber) {
+    message = data.vehicleNumber;
+  }
+  else if (data?.address) {
+    message = data.address;
+  }
+
+  setError(message);
+
+  setTimeout(() => {
+    setError("");
+  }, 3000);
+}
   };
 
   return (
@@ -197,11 +215,12 @@ export default function LandingPage() {
             </div>
 
             <button
-              onClick={submit}
-              className="w-full mt-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-lg font-semibold"
-            >
-              🚀 Place Order
-            </button>
+  type="button"
+  onClick={submit}
+  className="w-full mt-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 rounded-lg font-semibold"
+>
+  🚀 Place Order
+</button>
 
             <button
               onClick={() => setShowForm(false)}
